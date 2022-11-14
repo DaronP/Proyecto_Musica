@@ -26,15 +26,9 @@ except:
 def play_guitar(notas, rythm):
     for d in range(len(rythm)):
         if rythm[d] < 0.0:
-            if type(notas[d]) == int:
-                d_guitar.play_note(notas[d], 0.0, (rythm[d]* -1))
-            else:
-                d_guitar.play_chord(notas[d], 0.0, (rythm[d]* -1))
+            d_guitar.play_note(notas[d], 0.0, (rythm[d]* -1))
         else:
-            if type(notas[d]) == int:
-                d_guitar.play_note(notas[d], 1.0, rythm[d])
-            else:
-                d_guitar.play_chord(notas[d], 1.0, rythm[d])
+            d_guitar.play_note(notas[d], 1.0, rythm[d])
 
 def play_bass(notas, rythm):
     for d in range(len(rythm)):
@@ -83,7 +77,7 @@ def play_song(song):
     for i in range(0, song_length - 1):
 
         s.fork(play_guitar, args=[string['guitar_notes'][i], string['rythm'][i]])
-        #s.fork(play_bass, args=[string['bass'][i], string['b_rythm'][i]])
+        s.fork(play_bass, args=[string['bass_notes'][i], string['bass_rythm'][i]])
         s.fork(play_kick_drum, args=[perc['kick'][i]])
         s.fork(play_hhat, args=[perc['hhat'][i]]) 
         s.fork(play_snare, args=[perc['snare'][i]])
@@ -94,4 +88,18 @@ def play_song(song):
         
 composer = Procedural()
 song = composer.composer()
+streamer_mode = True
+song_count = 1
+print(song_count)
 play_song(song)
+
+
+
+if streamer_mode:
+    while True:
+        song_count += 1
+        print(song_count)
+        song = composer.composer()
+        play_song(song)
+        
+    

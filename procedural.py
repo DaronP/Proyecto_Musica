@@ -16,6 +16,8 @@ class Procedural:
                                 'natural_major': [2, 2, 1, 2, 2, 2, 1]}
                 }
 
+        self.mM_scales = random.choice(['major scales', 'minor scales'])
+
         self.chords_form = [0, 2, 4]
         self.tonalities = {'non-blues': [[0, 5, 3, 4], 
                                     [5]],
@@ -24,7 +26,7 @@ class Procedural:
                     ]}
 
         self.scale = []
-        self.scale_name = ''
+        self.scale_name = random.choice(list(self.scales[self.mM_scales].keys()))
         self.scale_chords = []
         self.progression = []
         self.f_pitch = 0
@@ -56,17 +58,12 @@ class Procedural:
 
 
 
-    def string_notes(self, pitch = 4, scale_name=''):
+    def string_notes(self, pitch = 4):
         notes = [] 
         pila = []
         pila.append(pitch)
 
-        scale = []
-        scale_name = ''
-
-        mM_scales = random.choice(['major scales', 'minor scales'])
-        scale_name = random.choice(list(self.scales[mM_scales].keys()))
-        scale = self.scales[mM_scales][scale_name]
+        scale = self.scales[self.mM_scales][self.scale_name]
 
 
         for _ in range(0, 11):
@@ -84,7 +81,7 @@ class Procedural:
         scale_chords = self.make_chords(scale=flat_str_notes, scale_form = len(notes[0]))
 
 
-        return [notes, scale_name, scale_chords]
+        return [notes, scale_chords]
 
 
 
@@ -149,23 +146,47 @@ class Procedural:
 
         return bass_compas
 
-    def make_guitar(self, rythm):
+    def make_guitar(self, rythm, min_len=0, leads=False):
         guitar_notes = []
         prog_count = 0
-        random_octave = random.randint(4, 7)
+        random_octave = random.randint(4, 6)
 
-        for r in rythm:
-            if prog_count >= 8:
-                prog_count = 0
-            compas = []
-            for i in range(len(r)):
-                if i == 0:
-                    compas.append(self.scale_chords[2][self.progression[prog_count]][0])
-                else:
-                    random_note = random.randint(0, 2)
-                    compas.append(self.scale_chords[random_octave][self.progression[prog_count]][random_note])
-            guitar_notes.append(compas)
-            prog_count += 1
+        if leads:
+            print('LEADS')
+            for r in rythm:
+                if prog_count >= 8:
+                    prog_count = 0
+                compas = []
+                for i in range(len(r)):
+                    r_note = 0
+                    if i == 0:
+                        r_note = self.scale_chords[2][self.progression[prog_count]][0]
+                    else:
+                        random_note = random.randint(0, 2)
+                        r_note = self.scale_chords[random_octave][self.progression[prog_count]][random_note]
+                    
+                    l = int(r[i] / min_len)
+                    for _ in range(l):
+                        compas.append(r_note)
+
+                guitar_notes.append(compas)
+                prog_count += 1
+
+
+        else:
+            for r in rythm:
+                if prog_count >= 8:
+                    prog_count = 0
+                compas = []
+                for i in range(len(r)):
+                    if i == 0:
+                        compas.append(self.scale_chords[2][self.progression[prog_count]][0])
+                    else:
+                        random_note_pos = random.randint(0, 2)
+                        rand_note = self.scale_chords[random_octave][self.progression[prog_count]][random_note_pos]        
+                        compas.append(rand_note)
+                guitar_notes.append(compas)
+                prog_count += 1
 
 
         return guitar_notes
@@ -180,7 +201,7 @@ class Procedural:
 
         #Epic mood defaults
         blacks = 2
-        figure = 4
+        figure = random.randint(4, 5)
 
         #Building fundamental rythm
         for _ in range(1):
@@ -296,15 +317,47 @@ class Procedural:
         return fundamental_rythm
 
     def composer(self):
-        self.scale, self.scale_name, self.scale_chords = self.string_notes(pitch = random.randint(0, 11))
+        self.scale, self.scale_chords = self.string_notes(pitch = random.randint(0, 11))
         self.progression = self.make_progression(self.scale_name)
 
         fund = self.Fundamental()
-        guitar = self.make_guitar(fund['string']['guitar'])
+        leads = bool(random.getrandbits(1))
 
-        song = {'string': 
+        bass = self.make_bass(fund['perc']['kick'])
+        
+
+        if leads:
+            lead_rythm = []
+
+            mins = []
+            for i in fund['perc']['kick']:
+                mins.append(min(i))
+            
+            min_len = min(mins)
+
+
+            for _ in range(len(fund['string']['guitar'])):
+                compas = []
+                for i in range(int(4.0/min_len)):
+                    compas.append(min_len)
+                lead_rythm.append(compas)
+            
+            guitar = self.make_guitar(fund['string']['guitar'], min_len=min_len, leads=leads)
+
+            song = {'string': 
                         {'guitar_notes': guitar, 
-                        'rythm': fund['string']['guitar']}}
-        song['perc'] = fund['perc']
+                         'rythm': lead_rythm,
+                         'bass_notes': bass,
+                         'bass_rythm': fund['perc']['kick']}}
+            song['perc'] = fund['perc']
+        
+        else:
+            guitar = self.make_guitar(fund['string']['guitar'])
+            song = {'string': 
+                            {'guitar_notes': guitar, 
+                             'rythm': fund['string']['guitar'],
+                             'bass_notes': bass,
+                             'bass_rythm': fund['perc']['kick']}}
+            song['perc'] = fund['perc']
 
         return song
